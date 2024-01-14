@@ -3,6 +3,7 @@
  * 
  */
 use std::collections::HashMap;
+use std::thread;
 use crate::modules::{payload, server, module};
 use crate::traits::runnable::Runnable;
 
@@ -16,6 +17,9 @@ pub static DEFAULT_PROCESSES: Mutex<Vec<String>> = Mutex::new(Vec::new());
 
 
 pub fn run () {
+    //Thread handles
+    let mut handles = vec![];
+
     use std::sync::MutexGuard;
     let default_processes: Vec<String> = vec![
         "payload".to_string(), 
@@ -37,7 +41,12 @@ pub fn run () {
     for process in DEFAULT_PROCESSES.lock().unwrap().iter() {
         // println!("Spawning default process: {}", process);
         if let Some(process) = process_map.get(process) {
-            process.run();
+            let process = process.clone();
+            let handle = thread::spawn(move || {
+                process.run();
+            });
+            
+            handles.push(handle);
         } else {
             println!("Unknown process: {}", process);
         }
@@ -48,4 +57,9 @@ pub fn run () {
 
     let known_processes: MutexGuard<Vec<String>> = KNOWN_PROCESSES.lock().unwrap();
     println!("There are {} known processes", known_processes.len());
+
+    // Wait for all threads to complete
+    for handle in handles {
+        let _ = handle.join();
+    }
 }

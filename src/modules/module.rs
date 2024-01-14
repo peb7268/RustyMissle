@@ -1,6 +1,7 @@
 
 use crate::traits::runnable::Runnable;
 
+#[derive(Clone)]
 pub struct Module;
 
 // In payload.rs
